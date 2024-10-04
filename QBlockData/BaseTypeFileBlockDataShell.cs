@@ -118,5 +118,11 @@ namespace QBlockData
             }
             return t;
         }
+
+
+        public bool Delete(String Key) => Target.Delete(Key);
+        public bool UpdateString(String Key, String Value) => Target.Update(Key, Encoding.UTF8.GetBytes(Value));
+
+        public BlockDataMemoryBoxController GetControllerTarget() => Target;
     }
 }

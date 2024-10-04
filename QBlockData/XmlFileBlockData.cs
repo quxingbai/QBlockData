@@ -23,7 +23,8 @@ namespace QBlockData
             this.FileName = FileName;
             if (!File.Exists(FileName))
             {
-                XmlSource.CreateXmlDeclaration("1.0", "utf-8", "");
+                var d = XmlSource.CreateXmlDeclaration("1.0", "utf-8", "");
+                XmlSource.AppendChild(d);
                 var c = XmlSource.CreateElement("Content");
                 XmlSource.AppendChild(c);
                 var i = XmlSource.CreateElement("Infomation");
@@ -49,7 +50,10 @@ namespace QBlockData
             if (HasKey(Key)) return false;
             if (Data.Length == 0) Data = new byte[1];
             var memorys = FindEmptyMemorys(Data.Length);
-            var keyNode = XmlSource.CreateElement(Key);
+            var keyNode = XmlSource.CreateElement("K");
+            var keynodeKey = XmlSource.CreateAttribute("Key");
+            keynodeKey.InnerText = Key;
+            keyNode.Attributes.Append(keynodeKey);
             keyNode.InnerText = memorys.ToIdList();
             //如果数据和数据块大小不一样就得更新一下id头文件写法
             if (Data.Length % BlockSize != 0)
@@ -145,9 +149,9 @@ namespace QBlockData
 
         protected virtual XmlNode? HasKeyNode(string Key)
         {
-            foreach  (XmlNode n in _NODE_Keys.ChildNodes)
+            foreach (XmlNode n in _NODE_Keys.ChildNodes)
             {
-                if (n.Name == Key) return n;
+                if (n.Attributes["Key"].InnerText == Key) return n;
             }
             return null;
         }
