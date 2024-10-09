@@ -41,7 +41,20 @@ namespace QBlockData
                 foreach (var i in _NODE_EmptyBlocks.InnerText.Split(','))
                 {
                     if (i == "") continue;
-                    base.EmptyBlockIndexs.Push(int.Parse(i));
+                    if (i.IndexOf('~') != -1)
+                    {
+                        var data = i.Split('~');
+                        int Start = int.Parse(data[0]);
+                        int End = int.Parse(data[1]);
+                        for (int it = Start; it <= End; it++)
+                        {
+                            base.EmptyBlockIndexs.Push(it);
+                        }
+                    }
+                    else
+                    {
+                        base.EmptyBlockIndexs.Push(int.Parse(i));
+                    }
                 }
             }
         }
