@@ -90,6 +90,10 @@ namespace QBlockData
             Content.Write(memorys, BlockSize, Data);
             this.Save();
             Content.FlushStream();
+            if (IsUsingTemp)
+            {
+                TempDataTrySet(Key, Data);
+            }
             return true;
         }
 
@@ -125,6 +129,10 @@ namespace QBlockData
 
             _NODE_Keys.RemoveChild(kn);
             Save();
+            if (IsUsingTemp)
+            {
+                TempDataTryDelete(Key);
+            }
             return true;
         }
         protected void Save()
@@ -133,6 +141,10 @@ namespace QBlockData
         }
         public override byte[]? Query(string Key)
         {
+            if (IsUsingTemp&&TempDataTryQuery(Key, out var data))
+            {
+                return data;
+            }
             MemoryStream ms = new MemoryStream();
             var kn = HasKeyNode(Key);
             if (kn == null) return null;
@@ -152,7 +164,12 @@ namespace QBlockData
                     ms.Write(Content.Read(iss * BlockSize, BlockSize));
                 }
             });
-            return ms.ToArray();
+            var queryResult = ms.ToArray();
+            if (IsUsingTemp)
+            {
+                TempDataTrySet(Key, queryResult);
+            }
+            return queryResult;
         }
 
         public override bool HasKey(string Key)
@@ -166,6 +183,28 @@ namespace QBlockData
             {
                 if (n.Attributes["Key"].InnerText == Key) return n;
             }
+            return null;
+
+            //这个方法是先从头部找几个 没找到再从尾部找，也就是双指针 数据在中间是最慢。
+            //干活好像有点什么问题
+            bool findType = true;
+            var keyNodes = _NODE_Keys.ChildNodes;
+            int findLeft = 0, findRight = keyNodes.Count - 1;
+            int findCount = 0;
+            while (findLeft <= findRight)
+            {
+                var findNode = keyNodes[findType ? findLeft : findRight];
+                if (findNode.Attributes["Key"].InnerText == Key) return findNode;
+                findLeft += (findType ? 1 : 0);
+                findRight += (findType ? 0 : -1);
+                findCount++;
+                if (findCount == 5)
+                {
+                    findType = !findType;
+                    findCount = 0;
+                }
+            }
+
             return null;
         }
 

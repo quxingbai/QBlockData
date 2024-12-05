@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.SymbolStore;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,10 +14,20 @@ namespace QBlockData.DataStructs
         public long ContentBlockCount => Content.FileSize / BlockSize;//内容一共被分为多少个内存块
         protected Stack<int> EmptyBlockIndexs = new Stack<int>();
         protected BlockDataMemoryBox Content = null;
+        protected BlockDataTemp DataTempSetting = null;
+
+        public bool IsUsingTemp => DataTempSetting != null;
+        public long UsingTempSize => DataTempSetting.GetUsingTempSize();
+
         public BlockDataMemoryBoxController(BlockDataMemoryBox MemoryBox, int BlockSize = 50)
         {
             this.BlockSize = BlockSize;
             Content = MemoryBox;
+        }
+        public BlockDataMemoryBoxController UseQueryTemp(long MaxTempSize)
+        {
+            DataTempSetting = new BlockDataTemp(MaxTempSize);
+            return this;
         }
         /// <summary>
         /// 获取一段空的内存区间
@@ -74,6 +85,11 @@ namespace QBlockData.DataStructs
         {
             if (!Delete(Key)) return false;
             return Add(Key, Data);
+        }
+        public virtual bool AddOrUpdate(string key, byte[] Data)
+        {
+            if (HasKey(key)) return Update(key, Data);
+            else return Add(key, Data);
         }
         public abstract byte[] Query(String Key);
         public abstract bool HasKey(String Key);
@@ -154,6 +170,32 @@ namespace QBlockData.DataStructs
 
         }
 
+        /// <summary>
+        /// 尝试设置一个缓存数据
+        /// </summary>
+        protected bool TempDataTrySet(string key, byte[] TempData)
+        {
+            if (DataTempSetting == null) throw new Exception("使用缓存功能需要调用 UseQueryTemp 方法");
+            DataTempSetting?.AddOrUpdate(key, TempData);
+            return true;
+        }
+        /// <summary>
+        /// 尝试删除一个缓存数据
+        /// </summary>
+        protected bool TempDataTryDelete(string key)
+        {
+            if (DataTempSetting == null) throw new Exception("使用缓存功能需要调用 UseQueryTemp 方法");
+            return DataTempSetting.Delete(key);
+        }
+        /// <summary>
+        /// 尝试读取缓存数据
+        /// </summary>
+        protected bool TempDataTryQuery(string key, out byte[] data)
+        {
+            if (DataTempSetting == null) throw new Exception("使用缓存功能需要调用 UseQueryTemp 方法");
+            data = DataTempSetting?.Query(key);
+            return data != null;
+        }
 
     }
 }
