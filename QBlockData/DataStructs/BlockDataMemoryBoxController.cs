@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.SymbolStore;
 using System.Linq;
@@ -8,7 +9,8 @@ using System.Xml;
 
 namespace QBlockData.DataStructs
 {
-    public abstract class BlockDataMemoryBoxController
+
+    public abstract class BlockDataMemoryBoxController : IEnumerable<string>, IDisposable
     {
         public int BlockSize { get; set; }
         public long ContentBlockCount => Content.FileSize / BlockSize;//内容一共被分为多少个内存块
@@ -45,39 +47,81 @@ namespace QBlockData.DataStructs
                 };
             }
             BlockMemory Result = null;
+
+
             long count = NeedSize / BlockSize;
-            if (NeedSize % BlockSize != 0)
+            count += (NeedSize % BlockSize != 0) ? 1 : 0;
+            var indexs = CreateOrGetEmptyBlockDataIndex(count);
+            BlockMemory nowSetBlock = null;
+            foreach (var i in indexs)
             {
-                count += 1;
-            }
-            while (count > 0 && EmptyBlockIndexs.TryPop(out int emptyBlock))
-            {
-                var data = new BlockMemory()
+                var back = nowSetBlock;
+                nowSetBlock = new BlockMemory()
                 {
-                    BlockIndex = emptyBlock,
-                    BackBlock = Result,
-                    NextBlock = null
+                    BackBlock = back,
+                    BlockIndex = i
                 };
-                if (Result != null) Result.NextBlock = data;
-                Result = data;
-                count--;
-            }
-            if (count == 0) return Result.GetFirst();
-            var totalBlockCount = ContentBlockCount;
-            var idx = totalBlockCount;
-            while (count > 0)
-            {
-                var data = new BlockMemory()
+                if (back != null)
                 {
-                    BlockIndex = idx++,
-                    BackBlock = Result,
-                    NextBlock = null
-                };
-                if (Result != null) Result.NextBlock = data;
-                Result = data;
-                count--;
+                    back.NextBlock = nowSetBlock;
+                }
+                if (Result == null)
+                {
+                    Result = nowSetBlock;
+                }
             }
-            return Result.GetFirst();
+            return Result;
+
+
+            //BlockMemory Result = null;
+            //long count = NeedSize / BlockSize;
+            //if (NeedSize % BlockSize != 0)
+            //{
+            //    count += 1;
+            //}
+            //while (count > 0 && EmptyBlockIndexs.TryPop(out int emptyBlock))
+            //{
+            //    var data = new BlockMemory()
+            //    {
+            //        BlockIndex = emptyBlock,
+            //        BackBlock = Result,
+            //        NextBlock = null
+            //    };
+            //    if (Result != null) Result.NextBlock = data;
+            //    Result = data;
+            //    count--;
+            //}
+            //if (count == 0) return Result.GetFirst();
+            //var totalBlockCount = ContentBlockCount;
+            //var idx = totalBlockCount;
+            //while (count > 0)
+            //{
+            //    var data = new BlockMemory()
+            //    {
+            //        BlockIndex = idx++,
+            //        BackBlock = Result,
+            //        NextBlock = null
+            //    };
+            //    if (Result != null) Result.NextBlock = data;
+            //    Result = data;
+            //    count--;
+            //}
+            //return Result.GetFirst();
+        }
+        private IEnumerable<long> CreateOrGetEmptyBlockDataIndex(long count)
+        {
+            List<long> indexs = new List<long>();
+            while (indexs.Count < count && EmptyBlockIndexs.TryPop(out var empty))
+            {
+                indexs.Add(empty);
+            }
+            int createOffset = 0;
+            while (indexs.Count < count)
+            {
+                indexs.Add(createOffset + ContentBlockCount);
+                createOffset++;
+            }
+            return indexs;
         }
         public abstract bool Add(String Key, byte[] Data);
         public abstract bool Delete(String Key);
@@ -93,7 +137,6 @@ namespace QBlockData.DataStructs
         }
         public abstract byte[] Query(String Key);
         public abstract bool HasKey(String Key);
-
         /// <summary>
         /// 将头文件中存储的BlockIndex描述词转换为每一个对应的块指向Id
         /// </summary>
@@ -197,5 +240,25 @@ namespace QBlockData.DataStructs
             return data != null;
         }
 
+        public abstract IEnumerable<String> GetKeys();
+        public virtual void Dispose()
+        {
+            if (IsUsingTemp)
+            {
+                DataTempSetting.Dispose();
+            }
+            Content.Dispose();
+
+        }
+
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetKeys().GetEnumerator();
+        }
+        public virtual IEnumerator<string> GetEnumerator()
+        {
+            return GetKeys().GetEnumerator();
+        }
     }
 }

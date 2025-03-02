@@ -1,6 +1,7 @@
 ﻿using QBlockData.DataStructs;
 using QBlockData.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -8,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace QBlockData
 {
@@ -141,7 +143,7 @@ namespace QBlockData
         }
         public override byte[]? Query(string Key)
         {
-            if (IsUsingTemp&&TempDataTryQuery(Key, out var data))
+            if (IsUsingTemp && TempDataTryQuery(Key, out var data))
             {
                 return data;
             }
@@ -179,6 +181,27 @@ namespace QBlockData
 
         protected virtual XmlNode? HasKeyNode(string Key)
         {
+
+            //if (_NODE_Keys.ChildNodes.Count != 0)
+            //{
+            //    var keyNodes = _NODE_Keys.ChildNodes;
+            //    int leftPointer = 0, rightPointer = keyNodes.Count - 1;
+            //    do
+            //    {
+            //        if (leftPointer > rightPointer) return null;
+            //        var l = _NODE_Keys.ChildNodes[leftPointer];
+            //        if (l.Attributes["Key"].InnerText == Key) return l;
+            //        var r = _NODE_Keys.ChildNodes[rightPointer];
+            //        if (r.Attributes["Key"].InnerText == Key) return r;
+            //        leftPointer++;
+            //        if (leftPointer == rightPointer) return null;
+            //        rightPointer--;
+
+            //    } while (true);
+            //}
+            //return null;
+
+
             foreach (XmlNode n in _NODE_Keys.ChildNodes)
             {
                 if (n.Attributes["Key"].InnerText == Key) return n;
@@ -187,26 +210,40 @@ namespace QBlockData
 
             //这个方法是先从头部找几个 没找到再从尾部找，也就是双指针 数据在中间是最慢。
             //干活好像有点什么问题
-            bool findType = true;
-            var keyNodes = _NODE_Keys.ChildNodes;
-            int findLeft = 0, findRight = keyNodes.Count - 1;
-            int findCount = 0;
-            while (findLeft <= findRight)
-            {
-                var findNode = keyNodes[findType ? findLeft : findRight];
-                if (findNode.Attributes["Key"].InnerText == Key) return findNode;
-                findLeft += (findType ? 1 : 0);
-                findRight += (findType ? 0 : -1);
-                findCount++;
-                if (findCount == 5)
-                {
-                    findType = !findType;
-                    findCount = 0;
-                }
-            }
+            //bool findType = true;
+            //var keyNodes = _NODE_Keys.ChildNodes;
+            //int findLeft = 0, findRight = keyNodes.Count - 1;
+            //int findCount = 0;
+            //while (findLeft <= findRight)
+            //{
+            //    var findNode = keyNodes[findType ? findLeft : findRight];
+            //    if (findNode.Attributes["Key"].InnerText == Key) return findNode;
+            //    findLeft += (findType ? 1 : 0);
+            //    findRight += (findType ? 0 : -1);
+            //    findCount++;
+            //    if (findCount == 5)
+            //    {
+            //        findType = !findType;
+            //        findCount = 0;
+            //    }
+            //}
 
             return null;
         }
 
+        public override IEnumerator<string> GetEnumerator()
+        {
+            return GetKeys().GetEnumerator();
+        }
+
+        public override IEnumerable<string> GetKeys()
+        {
+            List<string> ks = new List<string>();
+            foreach (XmlNode item in _NODE_Keys)
+            {
+                ks.Add(item.Attributes["Key"].Value);
+            }
+            return ks;
+        }
     }
 }

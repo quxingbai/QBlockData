@@ -8,7 +8,7 @@ namespace QBlockData.Utils
 {
     static class QBlockDataVersion
     {
-        public static string Version = "1.0";
+        public static string Version = "1.1";
 
         public static string toString()
         {
