@@ -23,6 +23,10 @@ namespace QBlockData
         {
             return Target.Add(Key, Encoding.UTF8.GetBytes(Value));
         }
+        public bool AddOrUpdateString(String Key, String Value)
+        {
+            return Target.AddOrUpdate(Key, Encoding.UTF8.GetBytes(Value));
+        }
         public string? QueryString(String Key)
         {
             var q = Target.Query(Key);
@@ -118,11 +122,24 @@ namespace QBlockData
             }
             return t;
         }
-
-
+        public TLVData QueryTlvData(string Key)
+        {
+            var bs = Target.Query(Key);
+            return TLVData.Deserialization(bs);
+        }
+        public bool AddOrUpdateTlvDatas(string Key, IEnumerable<TLVData> Data)
+        {
+            MemoryStream ms = new MemoryStream();
+            foreach (var i in Data)
+            {
+                ms.Write(i.Serialization());
+            }
+            var r = Target.AddOrUpdate(Key, ms.ToArray());
+            ms.Dispose();
+            return r;
+        }
         public bool Delete(String Key) => Target.Delete(Key);
         public bool UpdateString(String Key, String Value) => Target.Update(Key, Encoding.UTF8.GetBytes(Value));
-
         public BlockDataMemoryBoxController GetControllerTarget() => Target;
     }
 }

@@ -19,6 +19,8 @@ namespace QBlockData
         protected XmlNode _NODE_Infomation => XmlSource["Content"]["Infomation"];
         protected XmlNode _NODE_EmptyBlocks => XmlSource["Content"]["EmptyBlocks"];
         protected XmlNode _NODE_Keys => XmlSource["Content"]["Keys"];
+        private bool _IsAutoDisposeControllerFile = false;
+        public bool IsAutoDisposeControllerFile { get => _IsAutoDisposeControllerFile; set { _IsAutoDisposeControllerFile = value; SetContentBoxDisposeState(false); } }//是否自动释放掉Key文件
         protected string FileName = null;
         public XmlFileBlockData(string FileName, int BlockSize = 50) : base(new BlockDataMemoryBox(File.Open(FileName + ".bdmb", FileMode.OpenOrCreate)), BlockSize)
         {
@@ -59,10 +61,30 @@ namespace QBlockData
                     }
                 }
             }
+            SetContentBoxDisposeState(false);
+        }
+        private void SetContentBoxDisposeState(bool IsUsingContentFile)
+        {
+            if (!IsAutoDisposeControllerFile) return;
+            if (IsUsingContentFile)
+            {
+                if (Content != null) throw new("此时Content还没被关闭掉");
+                Content = new BlockDataMemoryBox(File.Open(FileName+ ".bdmb", FileMode.Open));
+            }
+            else
+            {
+                Content.Dispose();
+                Content = null;
+            }
         }
         public override bool Add(string Key, byte[] Data)
         {
-            if (HasKey(Key)) return false;
+            SetContentBoxDisposeState(true);
+            if (HasKey(Key))
+            {
+                SetContentBoxDisposeState(false);
+                return false;
+            }
             if (Data.Length == 0) Data = new byte[1];
             var memorys = FindEmptyMemorys(Data.Length);
             var keyNode = XmlSource.CreateElement("K");
@@ -96,13 +118,18 @@ namespace QBlockData
             {
                 TempDataTrySet(Key, Data);
             }
+            SetContentBoxDisposeState(false);
             return true;
         }
-
         public override bool Delete(string Key)
         {
+            SetContentBoxDisposeState(true);
             var kn = HasKeyNode(Key);
-            if (kn == null) return false;
+            if (kn == null)
+            {
+                SetContentBoxDisposeState(false);
+                return false;
+            };
             IdStringListToRealIdList(kn.InnerText, (i) =>
             {
                 int index = int.Parse(i.IndexOf('.') != -1 ? i.Split('.')[0] : i);
@@ -135,6 +162,7 @@ namespace QBlockData
             {
                 TempDataTryDelete(Key);
             }
+            SetContentBoxDisposeState(false);
             return true;
         }
         protected void Save()
@@ -151,6 +179,7 @@ namespace QBlockData
             var kn = HasKeyNode(Key);
             if (kn == null) return null;
             var ids = kn.InnerText.Split(',');
+            SetContentBoxDisposeState(true);
             IdStringListToRealIdList(kn.InnerText, (i) =>
             {
                 if (i.IndexOf('.') != -1)
@@ -171,6 +200,7 @@ namespace QBlockData
             {
                 TempDataTrySet(Key, queryResult);
             }
+            SetContentBoxDisposeState(false);
             return queryResult;
         }
 

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using QBlockData.DataStructs;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +10,18 @@ namespace QBlockData.Utils
 {
     public static class DataUtils
     {
+
+        //public class TlvDataCreater
+        //{
+        //    /// <summary>
+        //    /// Enqueue 入列
+        //    /// </summary>
+        //    public TlvDataCreater EQ(object Datt)
+        //    {
+        //        TLVData.DeserializationFromStream
+        //    }
+        //}
+
         public static IEnumerable<byte> EncodeVarintBytes(int Data)
         {
             List<byte> result = new List<byte>();
@@ -23,7 +37,7 @@ namespace QBlockData.Utils
             }
             return result;
         }
-        public static int DecodeVarintBytes(byte[] Data)
+        public static int DecodeVarintBytes(IEnumerable<byte> Data)
         {
             int result = 0, move = 0;
             foreach (var d in Data)
@@ -46,7 +60,7 @@ namespace QBlockData.Utils
                 result |= (b & 0x7F) << move;
                 move += 7;
                 if ((b & 0x80) == 0) break;
-                if (move >= 32)
+                if (move >= 35)
                 {
                     throw new Exception("数据过长");
                 }
