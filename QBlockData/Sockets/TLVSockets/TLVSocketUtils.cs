@@ -3,6 +3,10 @@ using QBlockData.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -53,13 +57,38 @@ namespace QBlockData.Sockets.TLVSockets
                     {
                         Tag = i.Item1,
                         Data = TLVData.ObjectToBytes(i.Item1, i.Item2)
-                    }) ;
+                    });
                 }
                 if (WriteStartAndEndHeader)
                 {
                     dd.Add(TLVDataEnd);
                 }
                 return dd;
+            }
+        }
+
+        public static class NetUtil
+        {
+            public static IEnumerable<IPAddress> GetLocalIpv4List()
+            {
+                //List<IPAddress> ipl = new List<IPAddress>();
+                //var host = Dns.GetHostEntry(Dns.GetHostName());
+                //foreach (var ip in host.AddressList)
+                //{
+                //    if (ip.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(ip))
+                //    {
+                //        ipl.Add(ip);
+                //    }
+                //}
+                //return ipl;
+                var usableIPs = NetworkInterface.GetAllNetworkInterfaces()
+                        .Where(n => n.OperationalStatus == OperationalStatus.Up)
+                        .Where(n => n.GetIPProperties().GatewayAddresses.Any(g => !g.Address.Equals(IPAddress.Any)))
+                        .SelectMany(n => n.GetIPProperties().UnicastAddresses)
+                        .Where(a => a.Address.AddressFamily == AddressFamily.InterNetwork)
+                        .Select(a => a.Address)
+                        .ToList();
+                return usableIPs;
             }
         }
     }

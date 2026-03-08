@@ -122,10 +122,40 @@ namespace QBlockData
             }
             return t;
         }
-        public TLVData QueryTlvData(string Key)
+        public TLVData? QueryTlvData(string Key)
         {
             var bs = Target.Query(Key);
-            return TLVData.Deserialization(bs);
+            return bs == null ? null : TLVData.Deserialization(bs);
+        }
+        public TLVData[]? QueryTlvDatas(string Key)
+        {
+            var bs = Target.Query(Key);
+            if (bs == null) return null;
+            var bsm = new MemoryStream(bs);
+            bsm.Position = 0;
+            List<TLVData> data = new List<TLVData>();
+            TLVData.DeserializationFromStream(bsm, (d) => data.Add(d), () => true);
+            return data.ToArray();
+        }
+        public Queue<TLVData>? QueryTlvDatasQueue(String Key)
+        {
+            var data = QueryTlvDatas(Key);
+            if (data == null) return null;
+            Queue<TLVData> queue = new Queue<TLVData>();
+            foreach (var i in data)
+            {
+                queue.Enqueue(i);
+            }
+            return queue;
+        }
+        public bool AddOrUpdateTlvDatasFromObj(String Key, params object[] ObjValues)
+        {
+            List<TLVData> tlv = new();
+            foreach (var i in ObjValues)
+            {
+                tlv.Add(new(TLVData.GetDataType(i), i));
+            }
+            return AddOrUpdateTlvDatas(Key, tlv);
         }
         public bool AddOrUpdateTlvDatas(string Key, IEnumerable<TLVData> Data)
         {

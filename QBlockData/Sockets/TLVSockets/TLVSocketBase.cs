@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,12 +17,18 @@ namespace QBlockData.Sockets.TLVSockets
     public class TLVSocketBase : Socket
     {
         protected static readonly IPAddress _LocalIpAddress = IPAddress.Parse("127.0.0.1");
+        protected static readonly IPAddress _LocalAnyAddress = IPAddress.Any;
         public bool IsRunning { get; protected set; } = false;
         public event Action<TLVSocketBase, Queue<TLVData>, Socket> Received;
+        public event Func<TLVSocketBase, Exception, bool> Error;
         public TLVSocketBase(ProtocolType protocolType) : base(AddressFamily.InterNetwork, SocketType.Stream, protocolType)
         {
         }
-
+        new public void Dispose()
+        {
+            IsRunning = false;
+            base.Dispose();
+        }
 
         protected virtual int SendToTLVData(IEnumerable<TLVData> Data, IEnumerable<EndPoint> Targets)
         {
@@ -72,9 +79,9 @@ namespace QBlockData.Sockets.TLVSockets
 
                 byte[] readBuffer = new byte[1024];
                 bool hasHead = false;
-                try
+                while (IsRunning)
                 {
-                    while (IsRunning)
+                    try
                     {
                         Queue<TLVData> Datas = new Queue<TLVData>();
                         MemoryStream Readed = new MemoryStream();
@@ -125,51 +132,20 @@ namespace QBlockData.Sockets.TLVSockets
                         });
 
 
-
-
-                        //byte[] readBuffer = new byte[1024];
-                        //bool hasHead = false;
-
-                        //while (IsRunning)
-                        //{
-                        //    Queue<TLVData> Datas = new Queue<TLVData>();
-                        //    MemoryStream Readed = new MemoryStream();
-                        //    var readLen = 0;
-                        //    while ((readLen= ReceiveTarget.Receive(readBuffer))!=-1)
-                        //    {
-                        //        Readed.Write(readBuffer,0,readLen);
-                        //        if (readLen != readBuffer.Length) break;
-                        //    }
-                        //    Readed.Position = 0;
-
-                        //    TLVData.DeserializationFromStream(Readed, data =>
-                        //    {
-                        //        if (data.Tag == TLVDataTags.String && data.Equals(TLVSocketUtils.Commands.TLVDataStart))
-                        //        {
-                        //            Datas = new Queue<TLVData>();
-                        //            hasHead = true;
-                        //        }
-                        //        else if (data.Tag == TLVDataTags.String && data.Equals(TLVSocketUtils.Commands.TLVDataEnd))
-                        //        {
-                        //            OnReceivedMessage(Datas, ReceiveTarget);
-                        //            hasHead = false;
-                        //        }
-                        //        else if (hasHead)
-                        //        {
-                        //            Datas.Enqueue(data);
-                        //        }
-                        //    });
                     }
-                }
-                catch(Exception error)
-                {
-                    SocketReceiveTargetError(ReceiveTarget, error);
+                    catch (Exception error)
+                    {
+                        SocketReceiveTargetError(ReceiveTarget, error);
+                    }
                 }
             });
         }
-        protected virtual void SocketReceiveTargetError(Socket Target,Exception ErrorMessage)
+        protected virtual void SocketReceiveTargetError(Socket Target, Exception ErrorMessage)
         {
-
+            if (!(Error?.Invoke(this, ErrorMessage) ?? false))
+            {
+                throw new Exception("未处理的异常\n" + ErrorMessage.ToString());
+            }
         }
     }
 }

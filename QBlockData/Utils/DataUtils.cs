@@ -10,6 +10,7 @@ namespace QBlockData.Utils
 {
     public static class DataUtils
     {
+        public const char SplitCode = '\u001F';
 
         //public class TlvDataCreater
         //{

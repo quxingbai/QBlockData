@@ -62,12 +62,12 @@ namespace QBlockData.Sockets.TLVSockets
         public void StartListen(int Port, int MaxListenCount = 10)
         {
             IsRunning = true;
-            Bind(new IPEndPoint(_LocalIpAddress, Port));
+            Bind(new IPEndPoint(_LocalAnyAddress, Port));
             Task.Run(() =>
             {
                 while (IsRunning)
                 {
-                    Listen(MaxListenCount);
+                    base.Listen(MaxListenCount);
                     var Client = Accept();
                     TLVSocketClientData ClientData = new TLVSocketClientData()
                     {

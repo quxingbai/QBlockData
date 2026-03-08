@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34511.84
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QBlockData", "QBlockData\QBlockData.csproj", "{805F99B7-822A-44BA-8B57-14064F51EAC5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QBlockData", "QBlockData\QBlockData.csproj", "{805F99B7-822A-44BA-8B57-14064F51EAC5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp5", "H:\没用的项目\ConsoleApp5\ConsoleApp5.csproj", "{3CA126EA-C79E-422A-970A-F6253D60361C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "H:\没用的项目\ConsoleApp1\ConsoleApp1.csproj", "{834A2FA3-55E2-49F4-A6EB-20D0C3BAB482}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{805F99B7-822A-44BA-8B57-14064F51EAC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{805F99B7-822A-44BA-8B57-14064F51EAC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{805F99B7-822A-44BA-8B57-14064F51EAC5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3CA126EA-C79E-422A-970A-F6253D60361C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3CA126EA-C79E-422A-970A-F6253D60361C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3CA126EA-C79E-422A-970A-F6253D60361C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3CA126EA-C79E-422A-970A-F6253D60361C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{834A2FA3-55E2-49F4-A6EB-20D0C3BAB482}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{834A2FA3-55E2-49F4-A6EB-20D0C3BAB482}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{834A2FA3-55E2-49F4-A6EB-20D0C3BAB482}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{834A2FA3-55E2-49F4-A6EB-20D0C3BAB482}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

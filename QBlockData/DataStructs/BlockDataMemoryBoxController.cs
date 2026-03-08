@@ -159,6 +159,10 @@ namespace QBlockData.DataStructs
                         end = long.Parse(tt[0]);
                         size = int.Parse(tt[1]);
                     }
+                    else
+                    {
+                        end = long.Parse(t[1]);
+                    }
                     if (start < end)
                     {
                         for (long index = start; index <= end; index++)

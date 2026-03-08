@@ -47,43 +47,20 @@ namespace QBlockData.DataStructs
             var target = obj as TLVData;
             return Length == target.Length && Tag == target.Tag && Data.SequenceEqual(target.Data);
         }
-        public object ReadTo(TLVDataTags? ToDataType = null)
+        public static TLVDataTags GetDataType(Object data)
         {
-            TLVDataTags tag = ToDataType ?? this.Tag;
-            switch (tag)
+            switch (data.GetType().Name)
             {
-                case TLVDataTags.Int:
-                    return BitConverter.ToInt32(Data);
-                case TLVDataTags.Long:
-                    return BitConverter.ToInt64(Data);
-                case TLVDataTags.Double:
-                    return BitConverter.ToDouble(Data);
-                case TLVDataTags.String:
-                    return Encoding.UTF8.GetString(Data);
-                case TLVDataTags.Bytes:
-                    return Data;
-                case TLVDataTags.Short:
-                    return BitConverter.ToInt16(Data);
-                case TLVDataTags.DateTime:
-                    return new DateTime(BitConverter.ToInt64(Data));
-                case TLVDataTags.Boolean:
-                    return Length == 1;
+                case "Int": return TLVDataTags.Int;
+                case "Long": return TLVDataTags.Long;
+                case "Double": return TLVDataTags.Double;
+                case "String": return TLVDataTags.String;
+                case "ByteArray": return TLVDataTags.Bytes;
+                case "Short": return TLVDataTags.Short;
+                case "DateTime": return TLVDataTags.DateTime;
             }
-            throw new Exception("数据转换失败");
+            throw new("未命名此类型的解析方式 " +data.GetType().Name);
         }
-        //public TLVDataTags GetDataType(Object data)
-        //{
-        //    switch (data.GetType().Name)
-        //    {
-        //        case "Int":return TLVDataTags.Int;
-        //        case "Long":return TLVDataTags.Long;
-        //        case "Double":return TLVDataTags.Double;
-        //        case "String":return TLVDataTags.String;
-        //        case "ByteArray":return TLVDataTags.Bytes;
-        //        case "Short":return TLVDataTags.Short;
-        //        case "DateTime":return TLVDataTags.DateTime;
-        //    }
-        //}
         public int ReadToInt() => (int)ReadTo();
         public long ReadToLong() => (long)ReadTo();
         public double ReadToDouble() => (double)ReadTo();
@@ -129,6 +106,34 @@ namespace QBlockData.DataStructs
             }
             return bs;
         }
+        public object ReadTo(TLVDataTags? ToDataType = null)
+        {
+            TLVDataTags tag = ToDataType ?? this.Tag;
+            return ReadTo(tag,Data);
+        }
+        public static object ReadTo(TLVDataTags ToDataType, byte[] Data)
+        {
+            switch (ToDataType)
+            {
+                case TLVDataTags.Int:
+                    return BitConverter.ToInt32(Data);
+                case TLVDataTags.Long:
+                    return BitConverter.ToInt64(Data);
+                case TLVDataTags.Double:
+                    return BitConverter.ToDouble(Data);
+                case TLVDataTags.String:
+                    return Encoding.UTF8.GetString(Data);
+                case TLVDataTags.Bytes:
+                    return Data;
+                case TLVDataTags.Short:
+                    return BitConverter.ToInt16(Data);
+                case TLVDataTags.DateTime:
+                    return new DateTime(BitConverter.ToInt64(Data));
+                case TLVDataTags.Boolean:
+                    return Data.Length == 1;
+            }
+            throw new Exception("数据转换失败");
+        }
         public static byte[] Serialization(TLVData DataSource)
         {
             var tag = (byte)(int)DataSource.Tag;
@@ -169,6 +174,7 @@ namespace QBlockData.DataStructs
         }
         public static void DeserializationFromStream(Stream DataStream, Action<TLVData> ReadedResult, Func<bool> CanNextRead = null)
         {
+            if (DataStream.Length == 0) return;
             while (true)
             {
                 var read = DataStream.ReadByte();

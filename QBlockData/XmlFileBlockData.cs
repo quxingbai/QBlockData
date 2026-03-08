@@ -22,7 +22,7 @@ namespace QBlockData
         private bool _IsAutoDisposeControllerFile = false;
         public bool IsAutoDisposeControllerFile { get => _IsAutoDisposeControllerFile; set { _IsAutoDisposeControllerFile = value; SetContentBoxDisposeState(false); } }//是否自动释放掉Key文件
         protected string FileName = null;
-        public XmlFileBlockData(string FileName, int BlockSize = 50) : base(new BlockDataMemoryBox(File.Open(FileName + ".bdmb", FileMode.OpenOrCreate)), BlockSize)
+        public XmlFileBlockData(string FileName, int BlockSize = 50) : base(OrderUtils.BeforeceAct(() => new FileInfo(FileName).Directory.Create(), () => new BlockDataMemoryBox(File.Open(FileName + ".bdmb", FileMode.OpenOrCreate))), BlockSize)
         {
             this.FileName = FileName;
             if (!File.Exists(FileName))
@@ -63,13 +63,23 @@ namespace QBlockData
             }
             SetContentBoxDisposeState(false);
         }
+
+        public void CopyTo(string FileName, int NewBlockSize)
+        {
+            XmlFileBlockData to = new XmlFileBlockData(FileName, NewBlockSize);
+            foreach (var i in this)
+            {
+                to.Add(i, Query(i));
+            }
+            to.Dispose();
+        }
         private void SetContentBoxDisposeState(bool IsUsingContentFile)
         {
             if (!IsAutoDisposeControllerFile) return;
             if (IsUsingContentFile)
             {
                 if (Content != null) throw new("此时Content还没被关闭掉");
-                Content = new BlockDataMemoryBox(File.Open(FileName+ ".bdmb", FileMode.Open));
+                Content = new BlockDataMemoryBox(File.Open(FileName + ".bdmb", FileMode.Open));
             }
             else
             {
@@ -85,13 +95,15 @@ namespace QBlockData
                 SetContentBoxDisposeState(false);
                 return false;
             }
-            if (Data.Length == 0) Data = new byte[1];
+            //if (Data.Length == 0) Data = new byte[1];
             var memorys = FindEmptyMemorys(Data.Length);
             var keyNode = XmlSource.CreateElement("K");
             var keynodeKey = XmlSource.CreateAttribute("Key");
             keynodeKey.InnerText = Key;
             keyNode.Attributes.Append(keynodeKey);
-            keyNode.InnerText = memorys.ToIdList();
+            var add_idl = memorys.ToIdList();
+            if (Data.Length == 0) add_idl += ".0";
+            keyNode.InnerText = add_idl;
             //如果数据和数据块大小不一样就得更新一下id头文件写法
             if (Data.Length % BlockSize != 0)
             {
@@ -111,7 +123,7 @@ namespace QBlockData
                 var idlist = bm == null ? "" : (bm.GetFirst().ToIdList());
                 _NODE_EmptyBlocks.InnerText = idlist;
             }
-            Content.Write(memorys, BlockSize, Data);
+            if (Data.Length > 0) Content.Write(memorys, BlockSize, Data);
             this.Save();
             Content.FlushStream();
             if (IsUsingTemp)
@@ -129,7 +141,8 @@ namespace QBlockData
             {
                 SetContentBoxDisposeState(false);
                 return false;
-            };
+            }
+            ;
             IdStringListToRealIdList(kn.InnerText, (i) =>
             {
                 int index = int.Parse(i.IndexOf('.') != -1 ? i.Split('.')[0] : i);

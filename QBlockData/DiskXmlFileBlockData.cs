@@ -33,7 +33,7 @@ namespace QBlockData
         {
             CopyInfomation, CopyEmptyBlocks, CopyKeys
         }
-        public DiskXmlFileBlockData(string FileName, int BlockSize = 50) : base(new BlockDataMemoryBox(File.Open(FileName + ".bdmb", FileMode.OpenOrCreate)), BlockSize)
+        public DiskXmlFileBlockData(string FileName, int BlockSize = 50) : base(OrderUtils.BeforeceAct(()=>new FileInfo(FileName).Directory.Create(),()=> new BlockDataMemoryBox(File.Open(FileName + ".bdmb", FileMode.OpenOrCreate))), BlockSize)
         {
             _SourceFilePath = FileName;
             if (!File.Exists(FileName))
