@@ -18,6 +18,7 @@ namespace QBlockData.Sockets.TLVSockets
         /// 要在StartListen方法执行前执行  心跳检测
         /// </summary>
         public bool IsCheckedOnlineTime { get; set; }
+        public int ToClientsPingPacketTimeSecond = 3;
         public event Action<TLVSocketServer, TLVSocketClientData> ClientJoin;
         public event Action<TLVSocketServer, TLVSocketClientData> ClientLeave;
         public class TLVSocketClientData
@@ -82,11 +83,13 @@ namespace QBlockData.Sockets.TLVSockets
             });
             if (IsCheckedOnlineTime)
             {
+                DateTime? lastSendPingDate = null;
                 //心跳包检测
                 Task.Run(() =>
                 {
                     while (IsCheckedOnlineTime && IsRunning)
                     {
+                        DateTime now = DateTime.Now;
                         foreach (var client in Clients)
                         {
                             var i = client.Value;
@@ -96,6 +99,11 @@ namespace QBlockData.Sockets.TLVSockets
                                 ClientLeave?.Invoke(this, i);
                                 Clients.Remove(client.Key);
                             }
+                        }
+                        if (lastSendPingDate==null||(lastSendPingDate != null && (now - lastSendPingDate).Value.TotalSeconds >= this.ToClientsPingPacketTimeSecond))
+                        {
+                            SendToClients(TLVSocketUtils.Commands.Ping);
+                        lastSendPingDate = now;
                         }
                         Thread.Sleep(1000);
                     }

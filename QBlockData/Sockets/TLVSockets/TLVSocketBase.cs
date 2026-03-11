@@ -23,12 +23,27 @@ namespace QBlockData.Sockets.TLVSockets
         public event Func<TLVSocketBase, Exception, bool> Error;
         public TLVSocketBase(ProtocolType protocolType) : base(AddressFamily.InterNetwork, SocketType.Stream, protocolType)
         {
+
         }
         new public void Dispose()
         {
             IsRunning = false;
             base.Dispose();
         }
+
+        protected void OpenTickSecond(Dictionary<string,object>? Args=null)
+        {
+            Args = Args ?? new();
+            Task.Run(() =>
+            {
+                while (IsRunning)
+                {
+                    OnTickSecond(Args);
+                    Thread.Sleep(1000);
+                }
+            });
+        }
+
 
         protected virtual int SendToTLVData(IEnumerable<TLVData> Data, IEnumerable<EndPoint> Targets)
         {
@@ -146,6 +161,10 @@ namespace QBlockData.Sockets.TLVSockets
             {
                 throw new Exception("未处理的异常\n" + ErrorMessage.ToString());
             }
+        }
+        protected virtual void OnTickSecond(Dictionary<string,object> Args)
+        {
+
         }
     }
 }
